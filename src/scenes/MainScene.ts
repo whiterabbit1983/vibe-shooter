@@ -613,6 +613,25 @@ export class MainScene extends Scene {
   }
 
   private startWave() {
+    // Clear all enemies and projectiles
+    this.enemies.getChildren().forEach((enemy: GameObjects.GameObject) => {
+      if (enemy instanceof GameObjects.Sprite) {
+        enemy.destroy();
+      }
+    });
+
+    this.playerProjectiles.getChildren().forEach((projectile: GameObjects.GameObject) => {
+      if (projectile instanceof GameObjects.Sprite) {
+        projectile.destroy();
+      }
+    });
+
+    this.enemyProjectiles.getChildren().forEach((projectile: GameObjects.GameObject) => {
+      if (projectile instanceof GameObjects.Sprite) {
+        projectile.destroy();
+      }
+    });
+
     // Hide player and disable controls
     this.player.setVisible(false);
     this.player.setActive(false);
