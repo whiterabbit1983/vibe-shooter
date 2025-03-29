@@ -431,11 +431,22 @@ export class MainScene extends Scene {
 
   private handleProjectileEnemyCollision(projectile: GameObjects.Sprite, enemy: GameObjects.Sprite) {
     projectile.destroy();
-    enemy.destroy();
-    // Create explosion at enemy position
-    this.createExplosion(enemy.x, enemy.y);
-    this.score += 50;
-    this.scoreText.setText(`Score: ${this.score}`);
+    
+    // Check if enemy has lives (wave 5 and above)
+    const lives = enemy.getData('lives') || 1;
+    
+    if (lives > 1) {
+      // Enemy has multiple lives, reduce by 1
+      enemy.setData('lives', lives - 1);
+      // Create explosion at enemy position
+      this.createExplosion(enemy.x, enemy.y);
+    } else {
+      // Enemy has 1 life or less, destroy it
+      this.createExplosion(enemy.x, enemy.y);
+      enemy.destroy();
+      this.score += 50;
+      this.scoreText.setText(`Score: ${this.score}`);
+    }
   }
 
   private handleEnemyProjectilePlayerCollision(projectile: GameObjects.Sprite, player: GameObjects.Sprite) {
@@ -447,7 +458,17 @@ export class MainScene extends Scene {
     // Create explosion at enemy position
     if (!this.isPlayerInvulnerable) {
       this.createExplosion(enemy.x, enemy.y);
-      enemy.destroy();
+      
+      // Check if enemy has lives (wave 5 and above)
+      const lives = enemy.getData('lives') || 1;
+      
+      if (lives > 1) {
+        // Enemy has multiple lives, reduce by 1
+        enemy.setData('lives', lives - 1);
+      } else {
+        // Enemy has 1 life or less, destroy it
+        enemy.destroy();
+      }
     }
 
     this.handlePlayerHit();
@@ -565,6 +586,8 @@ export class MainScene extends Scene {
           enemy.setData('speed', this.ENEMY_SPEED);
           enemy.setData('lastShotTime', 0); // Initialize last shot time
           enemy.setData('bounced', false); // Track if ship has bounced
+          // Set lives based on wave number
+          enemy.setData('lives', this.currentWave >= 5 ? 2 : 1);
           
           this.enemies.add(enemy);
         });
@@ -588,6 +611,8 @@ export class MainScene extends Scene {
       enemy.setData('time', 0);
       enemy.setData('speed', this.ENEMY_SPEED);
       enemy.setData('lastShotTime', 0);
+      // Set lives based on wave number
+      enemy.setData('lives', this.currentWave >= 5 ? 2 : 1);
       
       this.enemies.add(enemy);
     } else {
@@ -607,6 +632,8 @@ export class MainScene extends Scene {
       enemy.setData('movementPattern', 'straight');
       enemy.setData('speed', this.ENEMY_SPEED);
       enemy.setData('lastShotTime', 0);
+      // Set lives based on wave number
+      enemy.setData('lives', this.currentWave >= 5 ? 2 : 1);
       
       this.enemies.add(enemy);
     }
