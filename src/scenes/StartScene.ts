@@ -17,12 +17,26 @@ export class StartScene extends Scene {
     this.add.image(240, 400, 'splash_bg').setOrigin(0.5);
 
     // Add title text
-    this.add.text(240, 200, 'SPACE SHOOTER', {
+    const background = this.add.image(240, 400, 'splash_bg').setOrigin(0.5);
+    // background.setAlpha(0.5);
+
+    // Add title with Thuast font split into two lines
+    this.add.text(240, 250, 'VIBE', {
       fontFamily: 'Thuast',
-      fontSize: '64px',
+      fontSize: '72px',
       color: '#ffffff',
       stroke: '#000000',
-      strokeThickness: 8
+      strokeThickness: 8,
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    this.add.text(240, 350, 'SHOOTER', {
+      fontFamily: 'Thuast',
+      fontSize: '72px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 8,
+      fontStyle: 'bold'
     }).setOrigin(0.5);
 
     // Add blinking start prompt with Game Paused font
