@@ -45,6 +45,9 @@ export class MainScene extends Scene {
   private isWaveActive: boolean = false;
   private waveBonusText!: GameObjects.Text;
   private waveBonusPointsText!: GameObjects.Text;
+  private firstAidKit: GameObjects.Sprite | null = null;
+  private hasSpawnedFirstAid: boolean = false;
+  private firstAidGroup!: GameObjects.Group;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -59,6 +62,8 @@ export class MainScene extends Scene {
     this.currentWave = 1;
     this.waveDuration = 10000; // Reset to 10 seconds
     this.isWaveActive = false;
+    this.hasSpawnedFirstAid = false;
+    this.firstAidKit = null;
   }
 
   create() {
@@ -94,6 +99,7 @@ export class MainScene extends Scene {
     this.enemies = this.add.group();
     this.playerProjectiles = this.add.group();
     this.enemyProjectiles = this.add.group();
+    this.firstAidGroup = this.add.group();
 
     // Setup collisions
     this.physics.add.overlap(
@@ -116,6 +122,15 @@ export class MainScene extends Scene {
       this.player,
       this.enemies,
       (player, enemy) => this.handlePlayerEnemyCollision(player as GameObjects.Sprite, enemy as GameObjects.Sprite),
+      undefined,
+      this
+    );
+
+    // Add collision between player and first aid kit
+    this.physics.add.overlap(
+      this.player,
+      this.firstAidGroup,
+      (player, firstAid) => this.handleFirstAidCollection(player as GameObjects.Sprite, firstAid as GameObjects.Sprite),
       undefined,
       this
     );
@@ -617,6 +632,10 @@ export class MainScene extends Scene {
       // Show player and enable controls
       this.player.setVisible(true);
       this.player.setActive(true);
+
+      // Reset first aid spawn flag and spawn first aid kit
+      this.hasSpawnedFirstAid = false;
+      this.spawnFirstAidKit();
     });
   }
 
@@ -671,5 +690,68 @@ export class MainScene extends Scene {
     this.time.delayedCall(2000, () => {
       this.startWave();
     });
+  }
+
+  private spawnFirstAidKit() {
+    if (this.hasSpawnedFirstAid || this.playerLives >= 3) return;
+
+    // Random time between 2 and 8 seconds into the wave
+    const spawnTime = Phaser.Math.Between(2000, 8000);
+    
+    this.time.delayedCall(spawnTime, () => {
+      if (!this.isWaveActive || this.playerLives >= 3) return;
+
+      // Random position on screen
+      const x = Phaser.Math.Between(40, 440);
+      const y = Phaser.Math.Between(100, 700);
+
+      this.firstAidKit = this.add.sprite(x, y, 'first_aid');
+      this.firstAidKit.setScale(1.5);
+      this.firstAidKit.setAlpha(0.9);
+      this.physics.world.enable(this.firstAidKit);
+      
+      // Add floating animation
+      this.tweens.add({
+        targets: this.firstAidKit,
+        y: y + 10,
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
+
+      // Add to first aid group for collision
+      this.firstAidGroup.add(this.firstAidKit);
+      this.hasSpawnedFirstAid = true;
+
+      // Destroy first aid kit after 5 seconds
+      this.time.delayedCall(5000, () => {
+        if (this.firstAidKit && this.firstAidKit.active) {
+          this.firstAidKit.destroy();
+          this.firstAidKit = null;
+          this.hasSpawnedFirstAid = false;
+        }
+      });
+    });
+  }
+
+  private handleFirstAidCollection(player: GameObjects.Sprite, firstAid: GameObjects.Sprite) {
+    if (this.playerLives >= 3) return;
+
+    // Add one life
+    this.playerLives++;
+    
+    // Add new heart sprite
+    const heart = this.add.sprite(16 + ((this.playerLives - 1) * 18), 16, 'heart');
+    heart.setScale(2);
+    heart.setAlpha(0.8);
+    this.livesSprites.push(heart);
+
+    // Destroy first aid kit and its tweens
+    if (this.firstAidKit) {
+      this.firstAidKit.destroy();
+      this.firstAidKit = null;
+    }
+    this.hasSpawnedFirstAid = false;
   }
 } 

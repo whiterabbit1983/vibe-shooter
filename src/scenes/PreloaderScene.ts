@@ -42,9 +42,10 @@ export class PreloaderScene extends Scene {
     this.load.image('projectile', 'public/assets/projectile.png');
     this.load.image('heart', 'public/assets/heart.png');
     this.load.image('splash_bg', 'public/assets/splash_bg.jpg');
+    this.load.image('first_aid', 'public/assets/first_aid_kit.png');
     
     // Load explosion animation frames
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 5; i++) {
       this.load.image(`explosion_${i}`, `public/assets/explosion_${i}.png`);
     }
   }
