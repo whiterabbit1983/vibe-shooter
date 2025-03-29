@@ -1,4 +1,5 @@
 import { Scene, GameObjects } from 'phaser';
+import { MusicManager } from '../managers/MusicManager';
 
 interface GameOverData {
   score: number;
@@ -6,11 +7,24 @@ interface GameOverData {
 }
 
 export class GameOverScene extends Scene {
+  private musicManager: MusicManager;
+  private score: number = 0;
+  private wavesCompleted: number = 0;
+
   constructor() {
     super({ key: 'GameOverScene' });
+    this.musicManager = MusicManager.getInstance();
   }
 
-  create(data: GameOverData) {
+  init(data: GameOverData) {
+    this.score = data.score;
+    this.wavesCompleted = data.wavesCompleted;
+  }
+
+  create() {
+    // Start background music
+    this.musicManager.playMusic(this);
+
     // Add background with reduced opacity
     const background = this.add.image(240, 400, 'background').setOrigin(0.5);
     background.setAlpha(0.5);
@@ -25,7 +39,7 @@ export class GameOverScene extends Scene {
     }).setOrigin(0.5);
 
     // Add score text
-    this.add.text(240, 300, `Score: ${data.score}`, {
+    this.add.text(240, 300, `Score: ${this.score}`, {
       fontFamily: 'GamePaused',
       fontSize: '32px',
       color: '#ffffff',
@@ -34,7 +48,7 @@ export class GameOverScene extends Scene {
     }).setOrigin(0.5);
 
     // Add waves completed text
-    this.add.text(240, 400, `Waves Completed: ${data.wavesCompleted}`, {
+    this.add.text(240, 350, `Waves Completed: ${this.wavesCompleted}`, {
       fontFamily: 'GamePaused',
       fontSize: '32px',
       color: '#ffffff',
@@ -43,7 +57,7 @@ export class GameOverScene extends Scene {
     }).setOrigin(0.5);
 
     // Add restart prompt with blinking effect
-    const restartText = this.add.text(240, 500, 'Press SPACE to restart', {
+    const restartText = this.add.text(240, 450, 'Press SPACE to restart', {
       fontFamily: 'GamePaused',
       fontSize: '24px',
       color: '#ffffff',
@@ -60,8 +74,10 @@ export class GameOverScene extends Scene {
       repeat: -1
     });
 
-    // Setup restart key
+    // Setup input handlers
     this.input.keyboard!.on('keydown-SPACE', () => {
+      // Stop background music before starting new game
+      this.musicManager.stopMusic(this);
       this.scene.start('MainScene');
     });
   }

@@ -1,4 +1,5 @@
 import { Scene, GameObjects, Input, Physics, Types } from 'phaser';
+import { MusicManager } from '../managers/MusicManager';
 
 export class MainScene extends Scene {
   private player!: GameObjects.Sprite & { body: Physics.Arcade.Body };
@@ -48,9 +49,11 @@ export class MainScene extends Scene {
   private firstAidKit: GameObjects.Sprite | null = null;
   private hasSpawnedFirstAid: boolean = false;
   private firstAidGroup!: GameObjects.Group;
+  private musicManager: MusicManager;
 
   constructor() {
     super({ key: 'MainScene' });
+    this.musicManager = MusicManager.getInstance();
   }
 
   init() {
@@ -67,6 +70,9 @@ export class MainScene extends Scene {
   }
 
   create() {
+    // Start background music
+    this.musicManager.playMusic(this);
+
     // Add background with reduced opacity
     const background = this.add.image(240, 400, 'background').setOrigin(0.5);
     background.setAlpha(0.5);
@@ -401,6 +407,9 @@ export class MainScene extends Scene {
     projectile.setAlpha(0.9); // Less transparent for better visibility
     this.physics.world.enable(projectile);
     this.playerProjectiles.add(projectile);
+    
+    // Play laser sound
+    this.sound.play('laser');
   }
 
   private enemyShoot(enemy: GameObjects.Sprite) {
@@ -413,6 +422,9 @@ export class MainScene extends Scene {
     projectile.setAlpha(0.9); // Less transparent for better visibility
     this.physics.world.enable(projectile);
     this.enemyProjectiles.add(projectile);
+    
+    // Play enemy laser sound
+    this.sound.play('laser_enemy');
   }
 
   private createExplosion(x: number, y: number) {
@@ -440,12 +452,16 @@ export class MainScene extends Scene {
       enemy.setData('lives', lives - 1);
       // Create explosion at enemy position
       this.createExplosion(enemy.x, enemy.y);
+      // Play enemy injury sound
+      this.sound.play('enemy_injured');
     } else {
       // Enemy has 1 life or less, destroy it
       this.createExplosion(enemy.x, enemy.y);
       enemy.destroy();
       this.score += 50;
       this.scoreText.setText(`Score: ${this.score}`);
+      // Play explosion sound
+      this.sound.play('explosion');
     }
   }
 
@@ -465,9 +481,13 @@ export class MainScene extends Scene {
       if (lives > 1) {
         // Enemy has multiple lives, reduce by 1
         enemy.setData('lives', lives - 1);
+        // Play enemy injury sound
+        this.sound.play('enemy_injured');
       } else {
         // Enemy has 1 life or less, destroy it
         enemy.destroy();
+        // Play explosion sound
+        this.sound.play('explosion');
       }
     }
 
@@ -491,6 +511,9 @@ export class MainScene extends Scene {
     this.isPlayerInvulnerable = true;
     this.player.setAlpha(0.5);
     
+    // Play injury sound
+    this.sound.play('player_injured');
+    
     // Blink effect
     this.tweens.add({
       targets: this.player,
@@ -510,6 +533,8 @@ export class MainScene extends Scene {
     if (this.playerLives <= 0) {
       // Create explosion at player position
       this.createExplosion(this.player.x, this.player.y);
+      // Play player explosion sound
+      this.sound.play('player_explosion');
       this.player.destroy();
       
       // Stop all game activity
@@ -555,8 +580,10 @@ export class MainScene extends Scene {
     // Pause/resume physics
     if (this.isPaused) {
       this.physics.world.pause();
+      this.musicManager.pauseMusic();
     } else {
       this.physics.world.resume();
+      this.musicManager.resumeMusic();
     }
   }
 
@@ -792,6 +819,9 @@ export class MainScene extends Scene {
     heart.setScale(2);
     heart.setAlpha(0.8);
     this.livesSprites.push(heart);
+
+    // Play pickup sound
+    this.sound.play('pickup');
 
     // Destroy first aid kit and its tweens
     if (this.firstAidKit) {

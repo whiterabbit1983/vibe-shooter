@@ -1,32 +1,28 @@
 import { Scene, GameObjects } from 'phaser';
+import { MusicManager } from '../managers/MusicManager';
 
 export class StartScene extends Scene {
+  private musicManager: MusicManager;
+
   constructor() {
     super({ key: 'StartScene' });
+    this.musicManager = MusicManager.getInstance();
   }
 
   create() {
-    // Add splash background
-    const background = this.add.image(240, 400, 'splash_bg').setOrigin(0.5);
-    // background.setAlpha(0.5);
+    // Start background music
+    this.musicManager.playMusic(this);
 
-    // Add title with Thuast font split into two lines
-    this.add.text(240, 250, 'VIBE', {
+    // Add background
+    this.add.image(240, 400, 'splash_bg').setOrigin(0.5);
+
+    // Add title text
+    this.add.text(240, 200, 'SPACE SHOOTER', {
       fontFamily: 'Thuast',
-      fontSize: '72px',
+      fontSize: '64px',
       color: '#ffffff',
       stroke: '#000000',
-      strokeThickness: 8,
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-
-    this.add.text(240, 350, 'SHOOTER', {
-      fontFamily: 'Thuast',
-      fontSize: '72px',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 8,
-      fontStyle: 'bold'
+      strokeThickness: 8
     }).setOrigin(0.5);
 
     // Add blinking start prompt with Game Paused font
@@ -47,8 +43,10 @@ export class StartScene extends Scene {
       repeat: -1
     });
 
-    // Setup space key event
+    // Setup input handler
     this.input.keyboard!.on('keydown-SPACE', () => {
+      // Stop background music before transitioning
+      this.musicManager.stopMusic(this);
       this.scene.start('InstructionsScene');
     });
   }

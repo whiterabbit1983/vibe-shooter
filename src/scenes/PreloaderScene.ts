@@ -45,9 +45,20 @@ export class PreloaderScene extends Scene {
     this.load.image('first_aid', 'public/assets/first_aid_kit.png');
     
     // Load explosion animation frames
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 8; i++) {
       this.load.image(`explosion_${i}`, `public/assets/explosion_${i}.png`);
     }
+
+    // Load sounds
+    this.load.audio('explosion', 'public/assets/explosion.mp3');
+    this.load.audio('laser', 'public/assets/laser.mp3');
+    this.load.audio('laser_enemy', 'public/assets/laser_enemy.mp3');
+    this.load.audio('player_injured', 'public/assets/player_injured.mp3');
+    this.load.audio('enemy_injured', 'public/assets/enemy_injured.mp3');
+    this.load.audio('player_explosion', 'public/assets/player_explosion.mp3');
+    this.load.audio('pickup', 'public/assets/pickup.mp3');
+    this.load.audio('bg1', 'public/assets/bg1.ogg');
+    this.load.audio('bg2', 'public/assets/bg2.ogg');
   }
 
   create() {
