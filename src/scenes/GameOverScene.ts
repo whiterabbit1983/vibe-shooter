@@ -29,7 +29,7 @@ export class GameOverScene extends Scene {
     }).setOrigin(0.5);
 
     // Create restart prompt with blinking effect
-    const restartText = this.add.text(240, 500, 'Press SPACE to start', {
+    const restartText = this.add.text(240, 500, 'Press SPACE to restart', {
       fontFamily: 'GamePaused',
       fontSize: '24px',
       color: '#ffffff',
@@ -49,7 +49,7 @@ export class GameOverScene extends Scene {
 
     // Add space key event listener
     this.input.keyboard!.on('keydown-SPACE', () => {
-      this.scene.start('StartScene');
+      this.scene.start('MainScene');
     });
   }
 } 
