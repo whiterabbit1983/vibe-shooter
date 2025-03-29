@@ -37,6 +37,14 @@ export class MainScene extends Scene {
   private readonly ENEMY_SPAWN_INTERVAL: number = 3000; // Spawn interval remains 3 seconds
   private readonly ENEMY_SPAWN_PATTERNS: string[] = ['straight', 'sinusoidal', 'diagonal']; // Only three patterns
   private readonly ENEMY_SPACING: number = 40; // Space between ships in formation
+  private currentWave: number = 1;
+  private waveTimer: number = 0;
+  private waveDuration: number = 10000; // 10 seconds for first wave
+  private waveTitle!: GameObjects.Text;
+  private waveReadyText!: GameObjects.Text;
+  private isWaveActive: boolean = false;
+  private waveBonusText!: GameObjects.Text;
+  private waveBonusPointsText!: GameObjects.Text;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -46,8 +54,11 @@ export class MainScene extends Scene {
     // Reset lives and score when scene is restarted
     this.playerLives = 3;
     this.score = 0;
-    this.isPlayerInvulnerable = false; // Reset invulnerability state
+    this.isPlayerInvulnerable = false;
     this.isPaused = false;
+    this.currentWave = 1;
+    this.waveDuration = 10000; // Reset to 10 seconds
+    this.isWaveActive = false;
   }
 
   create() {
@@ -140,13 +151,48 @@ export class MainScene extends Scene {
       this.togglePause();
     });
 
-    // Start enemy spawning
-    this.time.addEvent({
-      delay: 3000,
-      callback: this.spawnEnemy,
-      callbackScope: this,
-      loop: true
-    });
+    // Setup wave title (initially hidden)
+    this.waveTitle = this.add.text(240, 300, 'WAVE 1', {
+      fontFamily: 'Thuast',
+      fontSize: '64px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 8
+    }).setOrigin(0.5);
+    this.waveTitle.setVisible(false);
+
+    // Setup wave ready text (initially hidden)
+    this.waveReadyText = this.add.text(240, 400, 'GET READY', {
+      fontFamily: 'GamePaused',
+      fontSize: '32px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 4
+    }).setOrigin(0.5);
+    this.waveReadyText.setVisible(false);
+
+    // Setup wave bonus text (initially hidden)
+    this.waveBonusText = this.add.text(240, 350, 'WAVE BONUS', {
+      fontFamily: 'Thuast',
+      fontSize: '48px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 8
+    }).setOrigin(0.5);
+    this.waveBonusText.setVisible(false);
+
+    // Setup wave bonus points text (initially hidden)
+    this.waveBonusPointsText = this.add.text(240, 450, '+500', {
+      fontFamily: 'Thuast',
+      fontSize: '32px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 4
+    }).setOrigin(0.5);
+    this.waveBonusPointsText.setVisible(false);
+
+    // Start first wave
+    this.startWave();
   }
 
   private createStar() {
@@ -213,8 +259,13 @@ export class MainScene extends Scene {
       }
     });
 
-    // Spawn enemies periodically
-    if (currentTime - this.lastEnemySpawn >= this.ENEMY_SPAWN_INTERVAL) {
+    // Check wave completion
+    if (this.isWaveActive && currentTime - this.waveTimer >= this.waveDuration) {
+      this.endWave();
+    }
+
+    // Only spawn enemies if wave is active
+    if (this.isWaveActive && currentTime - this.lastEnemySpawn >= this.ENEMY_SPAWN_INTERVAL) {
       this.spawnEnemy();
       this.lastEnemySpawn = currentTime;
     }
@@ -298,8 +349,8 @@ export class MainScene extends Scene {
       moveY * this.PLAYER_SPEED
     );
 
-    // Shooting with cooldown
-    if (this.isSpaceKeyDown && currentTime - this.lastShotTime >= this.SHOT_COOLDOWN) {
+    // Shooting with cooldown (only if wave is active)
+    if (this.isWaveActive && this.isSpaceKeyDown && currentTime - this.lastShotTime >= this.SHOT_COOLDOWN) {
       this.shoot();
       this.lastShotTime = currentTime;
     }
@@ -446,7 +497,10 @@ export class MainScene extends Scene {
       // Add fade out effect before transitioning to Game Over scene
       this.cameras.main.fadeOut(1000, 0, 0, 0, (camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
         if (progress === 1) {
-          this.scene.start('GameOverScene', { score: this.score });
+          this.scene.start('GameOverScene', { 
+            score: this.score,
+            wavesCompleted: this.currentWave - 1 // Pass the number of completed waves
+          });
         }
       });
     }
@@ -541,5 +595,81 @@ export class MainScene extends Scene {
       
       this.enemies.add(enemy);
     }
+  }
+
+  private startWave() {
+    // Hide player and disable controls
+    this.player.setVisible(false);
+    this.player.setActive(false);
+    
+    // Show wave title and ready text
+    this.waveTitle.setText(`WAVE ${this.currentWave}`);
+    this.waveTitle.setVisible(true);
+    this.waveReadyText.setVisible(true);
+
+    // Hide texts after 3 seconds and start the wave
+    this.time.delayedCall(3000, () => {
+      this.waveTitle.setVisible(false);
+      this.waveReadyText.setVisible(false);
+      this.isWaveActive = true;
+      this.waveTimer = this.time.now;
+      
+      // Show player and enable controls
+      this.player.setVisible(true);
+      this.player.setActive(true);
+    });
+  }
+
+  private endWave() {
+    // Clear all enemies and projectiles
+    this.enemies.getChildren().forEach((enemy: GameObjects.GameObject) => {
+      if (enemy instanceof GameObjects.Sprite) {
+        enemy.destroy();
+      }
+    });
+
+    this.playerProjectiles.getChildren().forEach((projectile: GameObjects.GameObject) => {
+      if (projectile instanceof GameObjects.Sprite) {
+        projectile.destroy();
+      }
+    });
+
+    this.enemyProjectiles.getChildren().forEach((projectile: GameObjects.GameObject) => {
+      if (projectile instanceof GameObjects.Sprite) {
+        projectile.destroy();
+      }
+    });
+
+    // Show wave bonus text
+    this.waveBonusText.setVisible(true);
+    this.waveBonusPointsText.setVisible(true);
+
+    // Fade out wave bonus text
+    this.tweens.add({
+      targets: [this.waveBonusText, this.waveBonusPointsText],
+      alpha: 0,
+      duration: 2000,
+      ease: 'Power2',
+      onComplete: () => {
+        this.waveBonusText.setVisible(false);
+        this.waveBonusPointsText.setVisible(false);
+        this.waveBonusText.setAlpha(1);
+        this.waveBonusPointsText.setAlpha(1);
+      }
+    });
+
+    // Award wave completion bonus
+    this.score += 500;
+    this.scoreText.setText(`Score: ${this.score}`);
+
+    // Prepare next wave
+    this.currentWave++;
+    this.waveDuration += 5000; // Add 5 seconds to next wave
+    this.isWaveActive = false;
+
+    // Start next wave after a short delay
+    this.time.delayedCall(2000, () => {
+      this.startWave();
+    });
   }
 } 
